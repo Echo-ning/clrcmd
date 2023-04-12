@@ -209,6 +209,10 @@ def compute_alignment(
 
 
 class RelaxedWordMoverSimilarity(nn.Module):
+    '''
+    用于计算两个句子之间的松弛词移距离（Relaxed Word Mover Distance）相似度。
+    其中forward方法计算相似度，输入参数x1和x2分别是两个句子的特征表示和掩码。
+    '''
     def __init__(self):
         super().__init__()
         self.cos = nn.CosineSimilarity(dim=-1)
@@ -248,6 +252,11 @@ class RelaxedWordMoverSimilarity(nn.Module):
 
 
 class PairwiseRelaxedWordMoverSimilarity(nn.Module):
+    '''
+    它实现了Pairwise Relaxed Word Mover Similarity（RWMS）算法。
+    RWMS是一种用于衡量两个文本序列之间相似度的度量标准。
+    它是原始的Word Mover Similarity（WMS）算法的一种松弛形式，该算法基于计算文本序列之间的词汇移动距离。
+    '''
     def __init__(self):
         super().__init__()
         self.cos = nn.CosineSimilarity(dim=-1)
@@ -366,12 +375,14 @@ def create_tokenizer(model_name: str) -> PreTrainedTokenizerBase:
 
 
 def create_similarity_model(model_name: str) -> nn.Module:
+    # 函数首先根据模型名称选择合适的预训练模型
     if model_name.startswith("bert"):
         model = AutoModel.from_pretrained("bert-base-uncased")
     elif model_name.startswith("roberta"):
         model = AutoModel.from_pretrained("roberta-base")
     else:
         raise ValueError(f"Undefined {model_name = }")
+    # 根据模型名称的后缀选择相应的特征表示模型和相似度模型
     if model_name.endswith("cls"):
         model = CLSPoolingSentenceRepresentationModel(model, head=True)
         model = SentenceSimilarityModel(model, CosineSimilarity(dim=-1))
@@ -379,7 +390,9 @@ def create_similarity_model(model_name: str) -> nn.Module:
         model = AveragePoolingSentenceRepresentationModel(model, head=True)
         model = SentenceSimilarityModel(model, CosineSimilarity(dim=-1))
     elif model_name.endswith("rcmd"):
+        # 从预训练模型的最后一层隐藏状态中提取句子的特征表示
         model = LastHiddenSentenceRepresentationModel(model, head=True)
+        # 句子相似度模型的核心类，其forward方法使用输入的两个句子分别通过特征表示模型（representation_model）生成特征表示，然后使用相似度模型（similarity）计算两个句子的相似度。
         model = SentenceSimilarityModel(model, RelaxedWordMoverSimilarity())
     else:
         raise ValueError(f"Undefined {model_name = }")

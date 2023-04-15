@@ -65,7 +65,7 @@ def objective(trial: Trial):
     model = create_contrastive_learning(
         "bert-rcmd", trial.suggest_categorical("temp", [0.025, 0.05, 0.075])
     )
-    # 加载训练数据集和评估数据集。
+    
     model.train()
 
     train_dataset = NLIContrastiveLearningDataset(

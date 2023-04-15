@@ -15,7 +15,7 @@ from clrcmd.models import create_contrastive_learning, create_tokenizer
 logger = logging.getLogger(__name__)
 
 # 创建一个命令行参数解析器的类。
-# formatter_class：用于设置帮助信息的格式。
+# formatter_class：用于设置帮助信息的格式。1
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 # fmt: off
 # add_argument：添加一个命令行参数。

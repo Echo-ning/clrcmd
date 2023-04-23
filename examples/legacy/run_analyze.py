@@ -1,3 +1,6 @@
+'''
+用于对文本进行对齐、比较，并使用 SimCSE 模型计算它们之间的相似度
+'''
 import argparse
 import csv
 import itertools
@@ -11,16 +14,24 @@ from transformers import RobertaModel, RobertaTokenizer
 
 
 class TextRepresentation(NamedTuple):
+    '''文本表示'''
+    # 由分词后的单词组成的列表
     tokens: List[str]
     # Alignment representation (consistent with byte representation)
+    # 字节表示
     bytes: List[str]  # Byte representation
+    # Unicode 表示
     string: List[str]  # Unicode representation
 
-
+# 创建文本表示的函数
 def create_create_representation(tokenizer: RobertaTokenizer) -> Callable:
+    # 参数 text 为要创建文本表示的文本字符串
     def create_representation(text: str) -> TextRepresentation:
+        # 将字符串分词
         tokens = text.split()
+        # 将分词后的单词连接起来，形成字节表示
         bytes = "".join(tokens)
+        # 将字节表示转换为 Unicode 表示
         string = tokenizer.convert_tokens_to_string(bytes)
         return TextRepresentation(tokens=tokens, bytes=bytes, string=string)
 
@@ -29,17 +40,21 @@ def create_create_representation(tokenizer: RobertaTokenizer) -> Callable:
 
 Pair = Tuple[int, int]
 
-
+# 创建文本对齐的函数
 def create_alignment(stream: List[str], tokens: List[str]) -> List[Pair]:
+    # 检查字节表示是否与分词后的单词组成的字符串相同
     assert "".join(tokens) == stream
+    # 计算分词后的单词在字节表示中的起始位置
     start_pos = itertools.accumulate(map(len, tokens), initial=0)
+    # 计算每个分词后的单词的长度
     length = map(len, tokens)
+    # 返回一个包含每个单词在字节表示中的起始位置和结束位置的列表
     return list(map(lambda x: (x[0], x[0] + x[1]), zip(start_pos, length)))
 
-
+# 判断两个区间是否重叠
 def is_overlap(interval1: Pair, interval2: Pair) -> bool:
-    assert interval1[0] < interval1[1]
-    assert interval2[0] < interval2[1]
+    assert interval1[0] < interval1[1]  # 确保区间 1 的起始位置小于结束位置
+    assert interval2[0] < interval2[1]  # 确保区间 2 的起始位置小于结束位置
     state = sorted(
         [
             (interval1[0], 0),
@@ -48,7 +63,7 @@ def is_overlap(interval1: Pair, interval2: Pair) -> bool:
             (interval2[1], 1),
         ],
         key=lambda x: (x[0], 1 - x[1]),
-    )
+    ) # 将区间的起始位置和结束位置按顺序组成一个
     state = list(map(lambda x: x[1], state))
     # In this case, only two possible cases are yield in this logic,
     # (0, 0, 1, 1), which is overlapped, or (0, 1, 0, 1), which is exclusive
